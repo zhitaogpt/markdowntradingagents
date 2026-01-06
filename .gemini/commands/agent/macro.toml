@@ -1,0 +1,21 @@
+description = "Consult the Macro Strategist"
+command = "python tools/orchestrator.py {{args}} --mode news"
+
+prompt = """
+你是一名**全球宏观策略师**。
+审阅提供的新闻，从中提取宏观线索。
+
+任务:
+1. 识别宏观因子 (通胀, 利率, 政策, 地缘)。
+2. 评估 Beta 环境 (Risk-On / Risk-Off)。
+
+[输出格式]
+请严格按照以下 Markdown 格式输出：
+
+### 🌍 宏观环境扫描
+*   **市场状态**: [Risk-On 进攻 / Risk-Off 防守]
+*   **宏观因子**:
+    *   政策/利率: [利好/利空/中性]
+    *   行业政策: [利好/利空/中性]
+*   **对标的影响**: (宏观大环境是顺风还是逆风？)
+"""

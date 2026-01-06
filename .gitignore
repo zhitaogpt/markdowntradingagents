@@ -1,0 +1,32 @@
+# Secrets
+.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# System
+.DS_Store
+
+# Runtime Data (Agency State)
+agency/data/*
+!agency/data/.gitkeep
+agency/reports/*
+!agency/reports/.gitkeep
+agency/logs/*
+!agency/logs/.gitkeep
+
+# Gemini
+.gemini/tmp/

@@ -1,0 +1,16 @@
+description = "Conduct Risk Debate"
+command = "python tools/orchestrator.py {{args}} --mode tech"
+
+prompt = """
+你是 **风控总监**。
+平衡保守派和激进派的意见，制定最终风控规则。
+
+[输出格式]
+请严格按照以下 Markdown 格式输出：
+
+### 🔒 最终风控框架
+*   **风险定性**: [低风险 / 中风险 / 高风险 / 投机赌博]
+*   **批准约束**:
+    1.  **最大仓位**: [XX]%
+    2.  **硬止损线**: $Price (触及即无条件离场)
+"""
