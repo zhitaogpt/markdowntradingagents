@@ -99,27 +99,59 @@ echo "📝 [Phase 5] Generating Trade Plan..."
 gemini $COMMON_FLAGS > agency/reports/plan.md
 
 # ==============================================================================
+
 # Phase 6: Final Aggregation (Transfer to Master Gemini)
+
 # ==============================================================================
+
 echo "📦 [Final] Consolidating all reports for Fund Manager review..."
 
-# Output all data to stdout with clear markers
-echo -e "\n=== START OF DOSSIER ===\n"
-echo "TARGET TICKER: $TICKER"
-echo -e "\n--- TECHNICAL REPORT ---\n"
-cat agency/reports/tech.md
-echo -e "\n--- FUNDAMENTAL REPORT ---\n"
-cat agency/reports/fund.md
-echo -e "\n--- SENTIMENT REPORT ---\n"
-cat agency/reports/sent.md
-echo -e "\n--- MACRO REPORT ---\n"
-cat agency/reports/macro.md
-echo -e "\n--- BULL VS BEAR DEBATE ---\n"
-cat agency/reports/signal.md
-echo -e "\n--- RISK ASSESSMENT ---\n"
-cat agency/reports/risk.md
-echo -e "\n--- PROPOSED TRADE PLAN ---\n"
-cat agency/reports/plan.md
-echo -e "\n=== END OF DOSSIER ===\n"
 
-echo "🏁 Backend process complete. Handing over to Fund Manager (Gemini Master)."
+
+# Clear screen for a clean presentation (optional, maybe just spacing)
+
+echo -e "\n\n\n"
+
+echo "=================================================================================="
+
+echo "                       🏛️  GEMINI CAPITAL DOSSIER: $TICKER                        "
+
+echo "=================================================================================="
+
+
+
+# Output all data to stdout with clear markers
+
+echo -e "\n--- 📈 TECHNICAL REPORT ---\n"
+
+cat agency/reports/tech.md
+
+echo -e "\n--- 🏢 FUNDAMENTAL REPORT ---\n"
+
+cat agency/reports/fund.md
+
+echo -e "\n--- 📰 SENTIMENT REPORT ---\n"
+
+cat agency/reports/sent.md
+
+echo -e "\n--- 🌍 MACRO REPORT ---\n"
+
+cat agency/reports/macro.md
+
+echo -e "\n--- ⚔️ BULL VS BEAR DEBATE ---\n"
+
+cat agency/reports/signal.md
+
+echo -e "\n--- 🛡️ RISK ASSESSMENT ---\n"
+
+cat agency/reports/risk.md
+
+echo -e "\n--- 📝 PROPOSED TRADE PLAN ---\n"
+
+cat agency/reports/plan.md
+
+
+
+echo "=================================================================================="
+
+echo "🏁 Dossier Generation Complete."

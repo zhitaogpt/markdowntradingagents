@@ -1,104 +1,54 @@
-# TradingAgents 2.0: 完整角色谱系实施规范 (Full Spectrum Implementation)
+# TradingAgents 2.0 设计规范与路线图
 
-## 1. 系统架构 DAG (有向无环图)
+## 1. 当前架构 (MVP 状态)
+*   **核心**: 基于文件系统的状态管理 (`agency/data`, `agency/reports`)。
+*   **编排器**: Bash 脚本 (`orchestrator.sh`) 管理线性工作流。
+*   **数据**: 混合管道 (Finnhub 获取实时价/基本面 + Stooq 获取历史 K 线)。
+*   **Agent**: 4 名分析师 (技术、基本面、舆情、宏观) + 2 名研究员 (多方、空方) + 1 名决策者 (基金经理)。
 
-```mermaid
-graph TD
-    %% Level 0: Data Injection
-    subgraph L0_Data [数据层]
-        T1[get_market.py] --> D1[market.json]
-        T2[get_financials.py] --> D2[financials.json]
-        T3[get_news.py] --> D3[news.json]
-    end
+## 2. 局限性分析 (v0.1)
 
-    %% Level 1: Analysts (The Eyes)
-    subgraph L1_Analysts [分析师团队]
-        D1 --> A_Tech[Tech Analyst] --> R_Tech[tech.md]
-        D2 --> A_Fund[Fund Analyst] --> R_Fund[fund.md]
-        D3 --> A_Sent[Sent Analyst] --> R_Sent[sent.md]
-        D3 --> A_Macro[Macro Analyst] --> R_Macro[macro.md]
-    end
+### 2.1 数据层
+*   **粒度**: 仅限日线，缺失日内波动细节。
+*   **深度**: 新闻仅抓取标题，Agent 无法阅读正文摘要。
 
-    %% Level 2: Researchers (The Brains - Debate Prep)
-    subgraph L2_Researchers [研究员团队]
-        R_Tech & R_Fund & R_Sent & R_Macro --> Res_Bull[Dr. Bull] --> Memo_Bull[bull_memo.md]
-        R_Tech & R_Fund & R_Sent & R_Macro --> Res_Bear[Dr. Bear] --> Memo_Bear[bear_memo.md]
-    end
+### 2.2 认知层
+*   **交互**: 线性辩论（多空双方没有直接交锋）。
+*   **记忆**: 无状态。不记得对同一标的历史上的分析结论。
 
-    %% Level 3: Debate & Risk (The Filters)
-    subgraph L3_Decision [决策辩论层]
-        Memo_Bull & Memo_Bear --> Debate_Mod[CIO Debate] --> Sig[investment_signal.md]
-        D1 --> Risk_Mgr[Risk Manager] --> Risk[risk_constraints.md]
-    end
+### 2.3 鲁棒性
+*   **编排**: Bash 脚本在处理复杂的错误处理和条件逻辑时较为脆弱。
 
-    %% Level 4: Execution (The Hands)
-    subgraph L4_Execution [交易执行层]
-        Sig & Risk --> Trader[Head Trader] --> Plan[final_trade_plan.md]
-    end
-    
-    %% Level 5: Final Report
-    Plan --> Manager[Fund Manager] --> FinalOutput
-```
+## 3. 开发路线图
 
-## 2. Agent 角色与 Prompt 定义 (`.gemini/prompts/`)
+### 第一阶段：Prompt 工程优化 (当前重点) 🧠
+*   **目标**: 在不改动代码的情况下，极大提升分析深度。
+*   **行动**:
+    *   **技术分析 Agent**: 强制要求识别 K 线形态（如双底、头肩顶）。
+    *   **基本面 Agent**: 增加定性分析（护城河、管理层、资本配置）。
+    *   **辩论环节**: 强制要求“数据说话”，引用具体指标攻击对方。
 
-我们需要为上述 DAG 中的每个节点创建独立的 Prompt 文件。
+### 第二阶段：Python 编排重构 (重构) 🐍
+*   **目标**: 提升稳定性和实现复杂流。
+*   **行动**:
+    *   将 `orchestrator.sh` 迁移至 `agency_manager.py`。
+    *   实现子进程管理和 JSON 校验。
 
-### Level 1: Analysts
-*   `tech.md`: 输出趋势、支撑压力。
-*   `fund.md`: 输出估值、质量。
-*   `sent.md`: 输出情绪分、叙事。
-*   `macro.md`: 输出宏观环境 (Risk-on/off)。
+### 第三阶段：数据深度挖掘 📊
+*   **目标**: 日内数据与全文阅读。
+*   **行动**:
+    *   集成 **Twelve Data** (获取 15min/1h K 线)。
+    *   增加网页抓取逻辑，阅读新闻全文。
 
-### Level 2: Researchers
-*   `bull.md`: 读取所有 Level 1 报告，只找买入理由。
-*   `bear.md`: 读取所有 Level 1 报告，只找做空理由。
+### 第四阶段：记忆与可视化 🖼️
+*   **目标**: 上下文关联与视觉增强。
+*   **行动**:
+    *   **向量记忆**: 将历史裁决存储在 Markdown 存档中。
+    *   **图表生成**: 使用 Matplotlib 生成 K 线图并嵌入研报。
 
-### Level 3: Decision Makers
-*   `debate.md`: 对比 Bull/Bear 观点，给出最终 Signal (Buy/Sell/Hold)。
-*   `risk.md`: 读取市场波动率，给出仓位限制和止损位。
+## 4. Prompt 增强计划 (立即实施)
+从“指令型”转变为“角色驱动 + 框架驱动”。
 
-### Level 4: Execution
-*   `trader.md`: 综合 Signal 和 Risk，写出具体挂单策略。
-
-### Level 5: Orchestrator
-*   `manager.md`: 汇总所有信息，向用户做最终陈述。
-
-## 3. 编排脚本逻辑 (`orchestrator.sh`)
-
-脚本必须严格按照 **依赖顺序** 执行。不能并行启动所有 Agent，必须分层级。
-
-```bash
-# 1. Fetch Data
-python tools/get_market.py ... > agency/data/market.json &
-...
-wait
-
-# 2. Run Analysts (Parallel)
-gemini run ... > agency/reports/tech.md &
-gemini run ... > agency/reports/fund.md &
-...
-wait
-
-# 3. Run Researchers (Parallel)
-gemini run "Read reports/tech.md, fund.md..." ... > agency/reports/bull_memo.md &
-gemini run ... > agency/reports/bear_memo.md &
-wait
-
-# 4. Run Debate & Risk (Parallel)
-gemini run "Read bull_memo.md, bear_memo.md..." ... > agency/reports/signal.md &
-gemini run "Read data/market.json..." ... > agency/reports/risk.md &
-wait
-
-# 5. Run Trader
-gemini run "Read signal.md, risk.md..." ... > agency/reports/plan.md
-
-# 6. Final Output
-cat agency/reports/plan.md
-```
-
-## 4. 实施步骤
-1.  **基础设施**: 创建目录。
-2.  **Prompt 工程**: 编写 9 个独立的 Prompt 文件。
-3.  **编排器编写**: 实现上述的分层等待 (`wait`) 逻辑。
-4.  **CLI 绑定**: `/agency:run` 指向该脚本。
+*   **技术分析**: “不要只列 RSI，告诉我 RSI 背离意味着什么。”
+*   **基本面**: “不要只列 PE，把 PEG 与行业平均水平对比。”
+*   **风险管理**: “计算最坏情况（3-sigma 事件）下的应对方案。”

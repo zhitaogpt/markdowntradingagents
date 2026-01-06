@@ -70,6 +70,18 @@ def calculate_technicals(df):
     df['BB_Upper'] = df['BB_Mid'] + (df['BB_Std'] * 2)
     df['BB_Lower'] = df['BB_Mid'] - (df['BB_Std'] * 2)
 
+    # 4. MACD (12, 26, 9)
+    # EMA 12
+    k_12 = 2 / (12 + 1)
+    ema_12 = close.ewm(span=12, adjust=False).mean()
+    # EMA 26
+    k_26 = 2 / (26 + 1)
+    ema_26 = close.ewm(span=26, adjust=False).mean()
+    
+    df['MACD_Line'] = ema_12 - ema_26
+    df['MACD_Signal'] = df['MACD_Line'].ewm(span=9, adjust=False).mean()
+    df['MACD_Hist'] = df['MACD_Line'] - df['MACD_Signal']
+
     # Get latest values (last row)
     latest = df.iloc[-1]
     
@@ -85,6 +97,11 @@ def calculate_technicals(df):
         "Bollinger": {
             "Upper": round(latest['BB_Upper'], 2) if not pd.isna(latest['BB_Upper']) else None,
             "Lower": round(latest['BB_Lower'], 2) if not pd.isna(latest['BB_Lower']) else None
+        },
+        "MACD": {
+            "Line": round(latest['MACD_Line'], 3) if not pd.isna(latest['MACD_Line']) else None,
+            "Signal": round(latest['MACD_Signal'], 3) if not pd.isna(latest['MACD_Signal']) else None,
+            "Hist": round(latest['MACD_Hist'], 3) if not pd.isna(latest['MACD_Hist']) else None
         }
     }
 
@@ -151,7 +168,22 @@ def main():
     news_items = []
     if news_raw and isinstance(news_raw, list):
         # Take top 10 relevant news
-        for item in news_raw[:10]:
+        # Simple keyword filter: Title should ideally contain ticker or company name parts
+        # (This is a heuristic, can be relaxed if too strict)
+        relevant_keywords = [ticker, "STOCK", "MARKET", "EARNINGS", "REVENUE", "PROFIT", "CEO"]
+        
+        count = 0
+        for item in news_raw:
+            if count >= 10: break
+            
+            headline = item.get('headline', '').upper()
+            summary = item.get('summary', '').upper()
+            
+            # If explicit Ticker is mentioned in headline, it's high priority.
+            # Otherwise, just include it (Finnhub usually filters by ticker already),
+            # but we skip blank headlines.
+            if not headline: continue
+            
             news_items.append({
                 "title": item.get('headline'),
                 "source": item.get('source'),
@@ -159,6 +191,7 @@ def main():
                 "summary": item.get('summary'),
                 "url": item.get('url')
             })
+            count += 1
     print(f"✅ News: Found {len(news_items)} recent articles.")
 
     # -------------------------------------------------------------------------
